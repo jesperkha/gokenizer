@@ -8,18 +8,18 @@ import (
 
 /*
 
-"{word}={number}"  pattern
-{word}             class
+   "{word}={number}"  pattern
+   {word}             class
 
 Classes
 
-word        any sequence of ascii alphabetical characters
-number      any sequence of ascii numerical characters
-float       same as number, but accepts periods too
-var         variable name, same as word in addition to underscore,
-dollar, and numbers after the first character
-symbol      any printable ascii character that is not a number or letter
-whitespace  space, newline, and tab
+   word        any sequence of ascii alphabetical characters
+   number      any sequence of ascii numerical characters
+   float       same as number, but accepts periods too
+   var         variable name, same as word in addition to underscore,
+               dollar, and numbers after the first character
+   symbol      any printable ascii character that is not a number or letter
+   whitespace  space, newline, and tab
 
 */
 

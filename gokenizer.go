@@ -58,16 +58,19 @@ func (t *Tokenizer) Run(s string) error {
 			iter.Push()
 			result = mf(&iter)
 
-			if !result.matched {
-				iter.Pop()
-				continue
+			if result.matched {
+				token := Token{
+					Lexeme: result.lexeme,
+				}
+
+				if err := t.callbacks[idx](token); err != nil {
+					return err
+				}
+
+				break
 			}
 
-			token := Token{Lexeme: result.lexeme}
-			if err := t.callbacks[idx](token); err != nil {
-				return err
-			}
-			break
+			iter.Pop()
 		}
 
 		if !result.matched {
