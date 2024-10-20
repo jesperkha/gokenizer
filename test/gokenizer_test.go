@@ -9,7 +9,7 @@ import (
 )
 
 func TestStaticPattern(t *testing.T) {
-	word := "Hello"
+	word := "golang"
 	tokr := gokenizer.New()
 	result := ""
 
@@ -27,7 +27,7 @@ func TestStaticPattern(t *testing.T) {
 	}
 }
 
-func TestBasicPatterns(t *testing.T) {
+func TestBasicClasses(t *testing.T) {
 	input := "Hello, world!"
 	expectedOutput := []string{"Hello", ",", "world", "!"}
 	output := []string{}
