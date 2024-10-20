@@ -4,7 +4,7 @@ type MatchFunc func(Token) error
 
 type Tokenizer struct {
 	pos int
-	fs  map[string]MatchFunc
+	fs  []MatchFunc
 }
 
 type Token struct {
@@ -28,6 +28,7 @@ func (t *Tokenizer) Pattern(pattern string, f MatchFunc) {
 }
 
 // Runs tokenizer on given input string. Returns first error received by a pattern callback function.
+// Patterns are matched by the order the are defined in.
 func (t *Tokenizer) Run(s string) error {
 
 	return nil
