@@ -10,4 +10,8 @@ var classes = map[string]matcherFunc{
 	"number": func(iter *stringiter.StringIter) matchResult {
 		return matchResult{}
 	},
+
+	"symbol": func(iter *stringiter.StringIter) matchResult {
+		return matchResult{}
+	},
 }

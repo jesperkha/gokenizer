@@ -1,8 +1,6 @@
 package gokenizer
 
 import (
-	"fmt"
-
 	"github.com/jesperkha/gokenizer/stringiter"
 )
 
@@ -74,8 +72,7 @@ func (t *Tokenizer) Run(s string) error {
 		}
 
 		if !result.matched {
-			c := iter.Consume() // Next
-			fmt.Printf("unmatched '%s'\n", c)
+			iter.Consume() // Next
 		}
 	}
 

@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -39,28 +40,69 @@ func TestClassParser(t *testing.T) {
 	}
 }
 
-func TestBasicClasses(t *testing.T) {
-	input := "Hello, world!"
-	expectedOutput := []string{"Hello", ",", "world", "!"}
-	output := []string{}
+func makeClassTester(className, input, expected string) func(*testing.T) {
+	return func(t *testing.T) {
+		tokr := gokenizer.New()
 
-	tokr := gokenizer.New()
+		tokr.Pattern(fmt.Sprintf("{%s}", className), func(tok gokenizer.Token) error {
+			if tok.Lexeme != expected {
+				return fmt.Errorf("expected '%s', got '%s'", expected, tok.Lexeme)
+			}
+			return nil
+		})
 
-	tokr.Pattern("{word}", func(t gokenizer.Token) error {
-		output = append(output, t.Lexeme)
-		return nil
-	})
+		if err := tokr.Run(input); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
-	tokr.Pattern("{symbol}", func(t gokenizer.Token) error {
-		output = append(output, t.Lexeme)
-		return nil
-	})
+func TestClasses(t *testing.T) {
+	input := "golang123!"
 
-	if err := tokr.Run(input); err != nil {
-		t.Fatal(err)
+	tests := []func(*testing.T){
+		makeClassTester("word", input, "golang"),
+		makeClassTester("number", input, "123"),
+		makeClassTester("symbol", input, "!"),
 	}
 
-	if slices.Compare(output, expectedOutput) != 0 {
-		t.Fatalf("expected %s, got %s", strings.Join(expectedOutput, "|"), strings.Join(output, "|"))
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case_%d", i+1), tt)
+	}
+}
+
+func makeTokenizerTester(input string, expected, patterns []string) func(t *testing.T) {
+	return func(t *testing.T) {
+		tokr := gokenizer.New()
+		output := []string{}
+
+		for _, p := range patterns {
+			tokr.Pattern(p, func(t gokenizer.Token) error {
+				output = append(output, t.Lexeme)
+				return nil
+			})
+		}
+
+		if err := tokr.Run(input); err != nil {
+			t.Fatal(err)
+		}
+
+		if slices.Compare(output, expected) != 0 {
+			t.Fatalf("expected '%s', got '%s'", strings.Join(expected, "|"), strings.Join(output, "|"))
+		}
+	}
+}
+
+func TestTokenizer(t *testing.T) {
+	tests := []func(*testing.T){
+		makeTokenizerTester(
+			"Hello, world!",
+			[]string{"Hello", ",", "world", "!"},
+			[]string{"{word}", "{symbol}"},
+		),
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case_%d", i+1), tt)
 	}
 }
