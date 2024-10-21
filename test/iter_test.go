@@ -37,7 +37,8 @@ func TestSeek(t *testing.T) {
 	}
 
 	assertEq(t, "Hello", iter.Consume())
-	assertEq(t, ", world!", iter.Remainder())
+	assertEq(t, ",", iter.Consume())
+	assertEq(t, " world!", iter.Remainder())
 }
 
 func TestStack(t *testing.T) {

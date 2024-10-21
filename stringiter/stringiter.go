@@ -77,7 +77,7 @@ func (iter *StringIter) PeekN(n uint) {
 // Moves peek pointer to c. Returns false if c is not found.
 func (iter *StringIter) Seek(c byte) bool {
 	if i := strings.IndexByte(iter.Remainder(), c); i != -1 {
-		iter.peekPos = i
+		iter.peekPos = i + iter.pos
 		return true
 	}
 

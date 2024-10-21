@@ -27,6 +27,18 @@ func TestStaticPattern(t *testing.T) {
 	}
 }
 
+func TestClassParser(t *testing.T) {
+	tokr := gokenizer.New()
+
+	tokr.Pattern("foo{word}a{number}", func(t gokenizer.Token) error {
+		return nil
+	})
+
+	if err := tokr.Run(""); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBasicClasses(t *testing.T) {
 	input := "Hello, world!"
 	expectedOutput := []string{"Hello", ",", "world", "!"}
