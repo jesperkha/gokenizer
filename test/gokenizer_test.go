@@ -116,9 +116,42 @@ func TestTokenizer(t *testing.T) {
 			[]string{"Q:foo?"},
 			[]string{"Q{symbol}{word}?"},
 		),
+		// Test with braces
+		makeTokenizerTester(
+			"a{foo}",
+			[]string{"{foo}"},
+			[]string{"{lbrace}{word}{rbrace}"},
+		),
 	}
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case_%d", i+1), tt)
+	}
+}
+
+func TestValuesMap(t *testing.T) {
+	input := "Hello, world!"
+	tokr := gokenizer.New()
+
+	testGet := func(t *testing.T, tok gokenizer.Token, class, expect string, idx int) {
+		if w := tok.GetAt(class, idx); w != expect {
+			t.Errorf("expected '%s', got '%s'", expect, w)
+		}
+	}
+
+	tokr.Pattern("{word}{symbol} {word}{symbol}", func(tok gokenizer.Token) error {
+		testGet(t, tok, "word", "Hello", 0)
+		testGet(t, tok, "word", "world", 1)
+		testGet(t, tok, "symbol", ",", 0)
+		testGet(t, tok, "symbol", "!", 1)
+
+		testGet(t, tok, "number", "", 0)
+		testGet(t, tok, "word", "", 99)
+
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Fatal(err)
 	}
 }

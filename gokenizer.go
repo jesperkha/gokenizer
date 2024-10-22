@@ -13,14 +13,6 @@ type Tokenizer struct {
 	callbacks  []MatchFunc
 }
 
-type Token struct {
-	Pos    int    // Column of first character in token
-	Line   int    // Line number of token
-	Length int    // Length of token lexeme
-	Lexeme string // Token lexeme
-	Source string // The line the token is on
-}
-
 func New() Tokenizer {
 	return Tokenizer{
 		pos: 0,
@@ -50,31 +42,39 @@ func (t *Tokenizer) Run(s string) error {
 	iter := stringiter.New(s)
 
 	for !iter.Eof() {
-		result := matchResult{matched: false}
-
-		for idx, mf := range t.matchFuncs {
-			iter.Push()
-			result = mf(&iter)
-
-			if result.matched {
-				token := Token{
-					Lexeme: result.lexeme,
-				}
-
-				if err := t.callbacks[idx](token); err != nil {
-					return err
-				}
-
-				break
-			}
-
-			iter.Pop()
-		}
-
-		if !result.matched {
-			iter.Consume() // Next
+		if err := t.matchNext(&iter); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
+	callbackIdx := 0
+	result := matchResult{}
+
+	for idx, mf := range t.matchFuncs {
+		iter.Push()
+		if result = mf(iter); result.matched {
+			callbackIdx = idx
+			break
+		}
+
+		iter.Pop()
+	}
+
+	if !result.matched {
+		iter.Consume() // Next
+		return nil
+	}
+
+	token := Token{
+		// Todo: more info in Token
+		Lexeme: result.lexeme,
+		values: result.values,
+	}
+
+	err := t.callbacks[callbackIdx](token)
+	return err
 }

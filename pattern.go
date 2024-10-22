@@ -27,6 +27,7 @@ whitespace  space, newline, and tab
 type matchResult struct {
 	matched bool
 	lexeme  string
+	values  map[string][]string
 }
 
 // Matches with the given string. The implementation is dynamically created in createPattern.
@@ -61,7 +62,9 @@ func parseClass(iter *stringiter.StringIter) (name string, err error) {
 
 // Returns a function that matches based on the given pattern.
 func createMatcherFunc(pattern string) (mf matcherFunc, err error) {
-	funcs := []matcherFunc{}
+	funcs := []matcherFunc{} // Both should be same length
+	classNames := []string{}
+
 	pIter := stringiter.New(pattern)
 
 	for !pIter.Eof() {
@@ -79,6 +82,7 @@ func createMatcherFunc(pattern string) (mf matcherFunc, err error) {
 			}
 
 			funcs = append(funcs, f)
+			classNames = append(classNames, className)
 		} else if pIter.Seek('{') {
 			// Parse static word if there are characters before a {
 			staticWord := pIter.Consume()
@@ -87,20 +91,27 @@ func createMatcherFunc(pattern string) (mf matcherFunc, err error) {
 			}
 
 			funcs = append(funcs, literalMatcherFunc(staticWord))
+			classNames = append(classNames, "static")
 		} else {
 			// Otherwise the rest of the pattern string is a static word
 			funcs = append(funcs, literalMatcherFunc(pIter.Remainder()))
+			classNames = append(classNames, "static")
 			break
 		}
 	}
 
 	f := func(iter *stringiter.StringIter) (res matchResult) {
 		iter.Push()
+		values := make(map[string][]string)
 
-		for _, mf := range funcs {
-			result := mf(iter)
-			if !result.matched {
+		for idx, mf := range funcs {
+			tempResult := mf(iter)
+			if !tempResult.matched {
 				return res
+			}
+
+			if className := classNames[idx]; className != "static" {
+				values[className] = append(values[className], tempResult.lexeme)
 			}
 		}
 
@@ -111,6 +122,7 @@ func createMatcherFunc(pattern string) (mf matcherFunc, err error) {
 		return matchResult{
 			matched: true,
 			lexeme:  matchedString,
+			values:  values,
 		}
 	}
 

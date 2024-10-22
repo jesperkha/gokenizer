@@ -20,6 +20,28 @@ func isSymbol(c byte) bool {
 }
 
 var classes = map[string]matcherFunc{
+	"lbrace": func(iter *stringiter.StringIter) matchResult {
+		if iter.Peek() == '{' {
+			return matchResult{
+				matched: true,
+				lexeme:  iter.Consume(),
+			}
+		}
+
+		return matchResult{matched: false}
+	},
+
+	"rbrace": func(iter *stringiter.StringIter) matchResult {
+		if iter.Peek() == '}' {
+			return matchResult{
+				matched: true,
+				lexeme:  iter.Consume(),
+			}
+		}
+
+		return matchResult{matched: false}
+	},
+
 	"word": func(iter *stringiter.StringIter) matchResult {
 		word := ""
 
@@ -54,8 +76,6 @@ var classes = map[string]matcherFunc{
 			}
 		}
 
-		return matchResult{
-			matched: false,
-		}
+		return matchResult{matched: false}
 	},
 }
