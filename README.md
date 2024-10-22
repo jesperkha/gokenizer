@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>gokenizer</h1>
+<img src=".github/assets/logo.png" width="50%"></img>
 
 <b>A simple text tokenizer</b>
 
@@ -25,7 +25,7 @@ The following classes are defined by default:
 - `symbol`: any printable ascii character that is not a number or letter
 - `lbrace` and `rbrace`: for a static `{` and `}` respectively
 
-### Example
+## Basic example
 
 ```go
 func main() {
@@ -42,16 +42,20 @@ func main() {
 }
 ```
 
+As you can see, the tokenizer only matched with the last word "foobar".
+
 ```sh
 $ go run .
 foobar
 ```
 
-As you can see, the tokenizer only matched with the last word "foobar".
+> You may have noticed that the callback given to `Pattern()` returns an error. This error is returned by `Run()`.
 
-### Getting the string from a class
+## Getting the string from a class
 
 You can get the parsed string from a class by using `Token.Get()`:
+
+> In cases where you use the same class more than once, use `Token.GetAt()`
 
 ```go
 func main() {
@@ -75,8 +79,6 @@ $ go run .
 username 123
 ```
 
-> In cases where you use the same class more than once, use `Token.GetAt()`
-
-### Creating your own class
+## Creating your own class
 
 Todo
