@@ -2,7 +2,7 @@
 
 <img src=".github/assets/logo.png" width="50%"></img>
 
-<b>A simple text tokenizer</b>
+*A simple text tokenizer*
 
 </div>
 
