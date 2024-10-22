@@ -98,10 +98,23 @@ func makeTokenizerTester(input string, expected, patterns []string) func(t *test
 
 func TestTokenizer(t *testing.T) {
 	tests := []func(*testing.T){
+		// Basic test
 		makeTokenizerTester(
 			"Hello, world!",
 			[]string{"Hello", ",", "world", "!"},
 			[]string{"{word}", "{symbol}"},
+		),
+		// Multiple symbol test
+		makeTokenizerTester(
+			"a != b",
+			[]string{"!", "="},
+			[]string{"{symbol}"},
+		),
+		// Mix static and class
+		makeTokenizerTester(
+			"aQ:foo?!",
+			[]string{"Q:foo?"},
+			[]string{"Q{symbol}{word}?"},
 		),
 	}
 
