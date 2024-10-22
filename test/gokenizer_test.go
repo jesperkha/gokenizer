@@ -43,16 +43,19 @@ func TestClassParser(t *testing.T) {
 func makeClassTester(className, input, expected string) func(*testing.T) {
 	return func(t *testing.T) {
 		tokr := gokenizer.New()
+		word := ""
 
 		tokr.Pattern(fmt.Sprintf("{%s}", className), func(tok gokenizer.Token) error {
-			if tok.Lexeme != expected {
-				return fmt.Errorf("expected '%s', got '%s'", expected, tok.Lexeme)
-			}
+			word = tok.Lexeme
 			return nil
 		})
 
 		if err := tokr.Run(input); err != nil {
-			t.Fatal(err)
+			t.Error(err)
+		}
+
+		if word != expected {
+			t.Errorf("expected '%s', got '%s'", expected, word)
 		}
 	}
 }
@@ -84,11 +87,11 @@ func makeTokenizerTester(input string, expected, patterns []string) func(t *test
 		}
 
 		if err := tokr.Run(input); err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 
 		if slices.Compare(output, expected) != 0 {
-			t.Fatalf("expected '%s', got '%s'", strings.Join(expected, "|"), strings.Join(output, "|"))
+			t.Errorf("expected '%s', got '%s'", strings.Join(expected, "|"), strings.Join(output, "|"))
 		}
 	}
 }

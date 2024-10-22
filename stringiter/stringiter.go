@@ -33,6 +33,7 @@ func (iter *StringIter) Pop() int {
 	prev := iter.pos
 	iter.pos = iter.posStack[len(iter.posStack)-1]
 	iter.posStack = iter.posStack[:len(iter.posStack)-1]
+	iter.Restore()
 	return prev - iter.pos
 }
 
@@ -58,14 +59,13 @@ func (iter *StringIter) Consume() string {
 	return s
 }
 
-// Peeks next character and moves peek pointer. Returns null byte on eof.
+// Peeks next character. Returns null byte on eof.
 func (iter *StringIter) Peek() byte {
 	if iter.peekPos >= len(iter.s) {
 		return 0
 	}
 
-	b := iter.s[iter.peekPos]
-	iter.peekPos++
+	b := iter.s[iter.pos]
 	return b
 }
 
