@@ -129,6 +129,30 @@ func TestTokenizer(t *testing.T) {
 	}
 }
 
+func TestTokenValues(t *testing.T) {
+	tokr := gokenizer.New()
+
+	input := "foo bar faz"
+	expect := []string{"0", "4", "8"}
+	output := []string{}
+
+	tokr.Pattern("{word}", func(t gokenizer.Token) error {
+		output = append(output, fmt.Sprint(t.Pos))
+		if t.Source != input {
+			return fmt.Errorf("expected source '%s', got '%s'", input, t.Source)
+		}
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Fatal(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
 func TestValuesMap(t *testing.T) {
 	input := "Hello, world!"
 	tokr := gokenizer.New()
