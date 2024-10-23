@@ -155,3 +155,91 @@ func TestValuesMap(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestUserClass(t *testing.T) {
+	input := "a+b-c=3"
+	expect := "a+b"
+
+	tokr := gokenizer.New()
+
+	tokr.Class("math", func(b byte) bool {
+		return strings.Contains("+-/*=", string(b))
+	})
+
+	tokr.Pattern("a{math}c", func(tok gokenizer.Token) error {
+		if tok.Lexeme != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, tok.Lexeme)
+		}
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestUserPatternClass(t *testing.T) {
+	input := "var foo = 123;"
+	tokr := gokenizer.New()
+
+	tokr.ClassFromPattern("variable", "{word}")
+	tokr.ClassFromPattern("onetwothree", "123")
+	tokr.ClassFromPattern("declaration", "var {variable} = {onetwothree}")
+
+	tokr.Pattern("{declaration};", func(t gokenizer.Token) error {
+		if t.Lexeme != input {
+			return fmt.Errorf("expected '%s', got '%s'", input, t.Lexeme)
+		}
+		if expect, got := input[:len(input)-1], t.Get("declaration"); got != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		}
+
+		// Nested values
+		if expect, got := "foo", t.Get("variable"); got != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		}
+		if expect, got := "123", t.Get("onetwothree"); got != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		}
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestNestedParsing(t *testing.T) {
+	input := "1,2,3\na,b,c\n7,8,9"
+	expect := strings.Split(input, "\n")
+	output := []string{}
+
+	tokr := gokenizer.New()
+	lineParser := gokenizer.New()
+
+	tokr.Class("line", func(b byte) bool {
+		return b != '\n'
+	})
+
+	tokr.Pattern("{line}", func(t gokenizer.Token) error {
+		return lineParser.Run(t.Get("line"))
+	})
+
+	lineParser.Pattern("{number},{number},{number}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	lineParser.Pattern("{word},{word},{word}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}

@@ -13,9 +13,9 @@
 Gokenizer uses pattern strings composed of *static* words and *classes*.
 
 ```go
+pattern := "var {word} = {number}"
 // "var " and " = " are static patterns. Note that whitespace is included.
 // {word} and {number} are classes. They are special pre-defined patterns.
-pattern := "var {word} = {number}"
 ```
 
 The following classes are defined by default:
@@ -37,19 +37,19 @@ func main() {
         return nil
     })
 
-    // Run the toknizer on a given string
+    // Run the tokenizer on a given string
     tokr.Run("foo bar foobar")
 }
 ```
 
-As you can see, the tokenizer only matched with the last word "foobar".
+As you can see, the tokenizer only matched the last word "foobar".
 
 ```sh
 $ go run .
 foobar
 ```
 
-> You may have noticed that the callback given to `Pattern()` returns an error. This error is returned by `Run()`.
+> Notice that the callback given to `Pattern()` returns an error. This error is returned by `Run()`.
 
 ## Getting the string from a class
 
@@ -81,4 +81,28 @@ username 123
 
 ## Creating your own class
 
-Todo
+You can create a new class two different ways. With `.Class()` you provide the class name and a function that returns true as long as the given character is part of your class. With `.ClassFromPattern()` you just provide a class name and a pattern it uses:
+
+```go
+tokr.Class("notA", func (b byte) bool {
+    return b != 'A'
+})
+
+tokr.ClassFromPattern("username", "username: {word}")
+```
+
+When you have nested classes as in the `.ClassFromPattern()` example above, you can still access the value of each previous class:
+
+```go
+tokr.Pattern("{username}", func (tok Token) error {
+    fmt.Println(tok.Get("word"))
+    return nil
+})
+
+tokr.Run("username: John")
+```
+
+```sh
+$ go run .
+John
+```
