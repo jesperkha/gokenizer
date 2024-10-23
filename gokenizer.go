@@ -95,6 +95,7 @@ func (t *Tokenizer) Run(s string) error {
 func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	callbackIdx := 0
 	result := matchResult{}
+	pos := iter.Pos()
 
 	for idx, mf := range t.matchFuncs {
 		iter.Push()
@@ -112,8 +113,10 @@ func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	}
 
 	token := Token{
-		// Todo: more info in Token
+		Pos:    pos,
 		Lexeme: result.lexeme,
+		Source: iter.Source(),
+		Length: len(result.lexeme),
 		values: result.values,
 	}
 

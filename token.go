@@ -2,10 +2,9 @@ package gokenizer
 
 type Token struct {
 	Pos    int    // Column of first character in token
-	Line   int    // Line number of token
 	Length int    // Length of token lexeme
 	Lexeme string // Token lexeme
-	Source string // The line the token is on
+	Source string // The string provided to Run()
 
 	// Maps the class name to the parsed value, in order
 	values map[string][]string

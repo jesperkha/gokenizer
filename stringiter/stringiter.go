@@ -23,6 +23,14 @@ func (iter *StringIter) Eof() bool {
 	return iter.pos >= len(iter.s)
 }
 
+func (iter *StringIter) Pos() int {
+	return iter.pos
+}
+
+func (iter *StringIter) Source() string {
+	return iter.s
+}
+
 // Saves pos
 func (iter *StringIter) Push() {
 	iter.posStack = append(iter.posStack, iter.pos)
