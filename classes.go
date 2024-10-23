@@ -20,62 +20,62 @@ func isSymbol(c byte) bool {
 }
 
 var classes = map[string]matcherFunc{
-	"lbrace": func(iter *stringiter.StringIter) matchResult {
+	"lbrace": func(iter *stringiter.StringIter) Token {
 		if iter.Peek() == '{' {
-			return matchResult{
+			return Token{
+				Lexeme:  iter.Consume(),
 				matched: true,
-				lexeme:  iter.Consume(),
 			}
 		}
 
-		return matchResult{matched: false}
+		return Token{matched: false}
 	},
 
-	"rbrace": func(iter *stringiter.StringIter) matchResult {
+	"rbrace": func(iter *stringiter.StringIter) Token {
 		if iter.Peek() == '}' {
-			return matchResult{
+			return Token{
+				Lexeme:  iter.Consume(),
 				matched: true,
-				lexeme:  iter.Consume(),
 			}
 		}
 
-		return matchResult{matched: false}
+		return Token{matched: false}
 	},
 
-	"word": func(iter *stringiter.StringIter) matchResult {
+	"word": func(iter *stringiter.StringIter) Token {
 		word := ""
 
 		for isLetter(iter.Peek()) {
 			word += iter.Consume()
 		}
 
-		return matchResult{
-			lexeme:  word,
+		return Token{
+			Lexeme:  word,
 			matched: len(word) > 0,
 		}
 	},
 
-	"number": func(iter *stringiter.StringIter) matchResult {
+	"number": func(iter *stringiter.StringIter) Token {
 		number := ""
 
 		for isNumber(iter.Peek()) {
 			number += iter.Consume()
 		}
 
-		return matchResult{
-			lexeme:  number,
+		return Token{
+			Lexeme:  number,
 			matched: len(number) > 0,
 		}
 	},
 
-	"symbol": func(iter *stringiter.StringIter) matchResult {
+	"symbol": func(iter *stringiter.StringIter) Token {
 		if isSymbol(iter.Peek()) {
-			return matchResult{
+			return Token{
+				Lexeme:  iter.Consume(),
 				matched: true,
-				lexeme:  iter.Consume(),
 			}
 		}
 
-		return matchResult{matched: false}
+		return Token{matched: false}
 	},
 }

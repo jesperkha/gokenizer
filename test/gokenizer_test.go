@@ -158,8 +158,8 @@ func TestValuesMap(t *testing.T) {
 	tokr := gokenizer.New()
 
 	testGet := func(t *testing.T, tok gokenizer.Token, class, expect string, idx int) {
-		if w := tok.GetAt(class, idx); w != expect {
-			t.Errorf("expected '%s', got '%s'", expect, w)
+		if w := tok.GetAt(class, idx); w.Lexeme != expect {
+			t.Errorf("expected '%s', got '%s'", expect, w.Lexeme)
 		}
 	}
 
@@ -214,16 +214,16 @@ func TestUserPatternClass(t *testing.T) {
 		if t.Lexeme != input {
 			return fmt.Errorf("expected '%s', got '%s'", input, t.Lexeme)
 		}
-		if expect, got := input[:len(input)-1], t.Get("declaration"); got != expect {
-			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		if expect, got := input[:len(input)-1], t.Get("declaration"); got.Lexeme != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got.Lexeme)
 		}
 
 		// Nested values
-		if expect, got := "foo", t.Get("variable"); got != expect {
-			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		if expect, got := "foo", t.Get("declaration").Get("variable"); got.Lexeme != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got.Lexeme)
 		}
-		if expect, got := "123", t.Get("onetwothree"); got != expect {
-			return fmt.Errorf("expected '%s', got '%s'", expect, got)
+		if expect, got := "123", t.Get("declaration").Get("onetwothree"); got.Lexeme != expect {
+			return fmt.Errorf("expected '%s', got '%s'", expect, got.Lexeme)
 		}
 		return nil
 	})
@@ -246,7 +246,7 @@ func TestNestedParsing(t *testing.T) {
 	})
 
 	tokr.Pattern("{line}", func(t gokenizer.Token) error {
-		return lineParser.Run(t.Get("line"))
+		return lineParser.Run(t.Get("line").Lexeme)
 	})
 
 	lineParser.Pattern("{number},{number},{number}", func(t gokenizer.Token) error {

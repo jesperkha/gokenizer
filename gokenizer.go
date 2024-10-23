@@ -13,6 +13,9 @@ type Tokenizer struct {
 	classes    map[string]matcherFunc
 }
 
+// Matches with the given string. The implementation is dynamically created in createPattern.
+type matcherFunc func(iter *stringiter.StringIter) Token
+
 func New() Tokenizer {
 	return Tokenizer{
 		classes: make(map[string]matcherFunc),
@@ -41,17 +44,21 @@ func (t *Tokenizer) Class(name string, check func(byte) bool) {
 		return
 	}
 
-	t.classes[name] = func(iter *stringiter.StringIter) matchResult {
+	t.classes[name] = func(iter *stringiter.StringIter) Token {
+		pos := iter.Pos()
 		word := ""
 
 		for !iter.Eof() && check(iter.Peek()) {
 			word += iter.Consume()
 		}
 
-		return matchResult{
+		return Token{
+			Pos:     pos,
+			Lexeme:  word,
+			Source:  iter.Source(),
+			Length:  len(word),
 			class:   name,
 			matched: len(word) > 0,
-			lexeme:  word,
 		}
 	}
 }
@@ -94,7 +101,7 @@ func (t *Tokenizer) Run(s string) error {
 // Continue matching until one is found. Returns callbacks error.
 func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	callbackIdx := 0
-	result := matchResult{}
+	result := Token{}
 	pos := iter.Pos()
 
 	for idx, mf := range t.matchFuncs {
@@ -114,9 +121,9 @@ func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 
 	token := Token{
 		Pos:    pos,
-		Lexeme: result.lexeme,
+		Lexeme: result.Lexeme,
 		Source: iter.Source(),
-		Length: len(result.lexeme),
+		Length: len(result.Lexeme),
 		values: result.values,
 	}
 
@@ -124,27 +131,20 @@ func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	return err
 }
 
-// For future additional metadata about the expression
-type matchResult struct {
-	matched bool
-	class   string
-	lexeme  string
-	values  map[string][]string
-}
-
-// Matches with the given string. The implementation is dynamically created in createPattern.
-type matcherFunc func(iter *stringiter.StringIter) matchResult
-
 // Returns a function that matches the string literal s.
 func literalMatcherFunc(s string) matcherFunc {
-	return func(iter *stringiter.StringIter) matchResult {
+	return func(iter *stringiter.StringIter) Token {
+		pos := iter.Pos()
 		iter.PeekN(uint(len(s)))
 		lexeme := iter.Consume()
 
-		return matchResult{
+		return Token{
+			Lexeme:  lexeme,
+			Pos:     pos,
+			Length:  len(lexeme),
+			Source:  iter.Source(),
 			class:   "static",
 			matched: lexeme == s,
-			lexeme:  lexeme,
 		}
 	}
 }
@@ -223,25 +223,24 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 		return mf, err
 	}
 
-	f := func(iter *stringiter.StringIter) (res matchResult) {
+	f := func(iter *stringiter.StringIter) (res Token) {
+		pos := iter.Pos()
 		iter.Push()
-		values := make(map[string][]string)
+		values := make(map[string][]Token)
 
 		for idx, mf := range funcs {
+			pos := iter.Pos()
 			tempResult := mf(iter)
 			if !tempResult.matched {
 				return res
 			}
 
-			// Add map from previous match func
-			if tempResult.class != "" {
-				for k, v := range tempResult.values {
-					values[k] = append(tempResult.values[k], v...)
-				}
-			}
+			tempResult.Pos = pos
+			tempResult.Length = len(tempResult.Lexeme)
+			tempResult.Source = iter.Source()
 
 			if className := classNames[idx]; className != "static" {
-				values[className] = append(values[className], tempResult.lexeme)
+				values[className] = append(values[className], tempResult)
 			}
 		}
 
@@ -249,10 +248,13 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 		iter.PeekN(uint(length))
 		matchedString := iter.Consume()
 
-		return matchResult{
+		return Token{
+			Lexeme:  matchedString,
+			Length:  len(matchedString),
+			Pos:     pos,
+			Source:  iter.Source(),
 			matched: true,
 			class:   class,
-			lexeme:  matchedString,
 			values:  values,
 		}
 	}
