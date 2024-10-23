@@ -55,7 +55,7 @@ foobar
 
 ## Getting the string from a class
 
-You can get the parsed string from a class by using `Token.Get()`:
+You can get the parsed token from a class by using `Token.Get()`:
 
 > In cases where you use the same class more than once, use `Token.GetAt()`
 
@@ -64,8 +64,8 @@ func main() {
     tokr := gokenizer.New()
 
     tokr.Pattern("{word}{number}", func (tok Token) error {
-        word := tok.Get("word")
-        number := tok.Get("number")
+        word := tok.Get("word").Lexeme
+        number := tok.Get("number").Lexeme
 
         fmt.Println(word, number)
         return nil
@@ -97,7 +97,7 @@ When you have nested classes as in the `.ClassFromPattern()` example above, you 
 
 ```go
 tokr.Pattern("{username}", func (tok Token) error {
-    fmt.Println(tok.Get("word"))
+    fmt.Println(tok.Get("word").Lexeme)
     return nil
 })
 
