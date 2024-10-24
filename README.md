@@ -32,24 +32,24 @@ The following classes are defined by default:
 
 ```go
 func main() {
-    tokr := gokenizer.New()
+	tokr := gokenizer.New()
 
-    // Create a pattern that looks for any word followed by the string "bar":
-    tokr.Pattern("{word}bar", func (tok Token) error {
-        fmt.Println(tok.Lexeme)
-        return nil
-    })
+	// Create a pattern that looks for any word ending with a !
+	tokr.Pattern("{word}!", func(tok gokenizer.Token) error {
+		fmt.Println(tok.Lexeme)
+		return nil
+	})
 
-    // Run the tokenizer on a given string
-    tokr.Run("foo bar foobar")
+	// Run the tokenizer on a given string
+	fmt.Println(tokr.Run("foo! 123 + bar"))
 }
 ```
 
-As you can see, the tokenizer only matched the last word "foobar".
+As you can see, the tokenizer only matched the first word "foo!".
 
 ```sh
 $ go run .
-foobar
+foo!
 ```
 
 > Notice that the callback given to `Pattern()` returns an error. This error is returned by `Run()`.
@@ -64,7 +64,7 @@ You can get the parsed token from a class by using `Token.Get()`:
 func main() {
     tokr := gokenizer.New()
 
-    tokr.Pattern("{word}{number}", func (tok Token) error {
+    tokr.Pattern("{word}{number}", func (tok gokenizer.Token) error {
         word := tok.Get("word").Lexeme
         number := tok.Get("number").Lexeme
 
@@ -97,8 +97,8 @@ tokr.ClassFromPattern("username", "username: {word}")
 When you have nested classes as in the `.ClassFromPattern()` example above, you can still access the value of each previous class:
 
 ```go
-tokr.Pattern("{username}", func (tok Token) error {
-    fmt.Println(tok.Get("word").Lexeme)
+tokr.Pattern("{username}", func (tok gokenizer.Token) error {
+    fmt.Println(tok.Get("username").Get("word").Lexeme)
     return nil
 })
 
