@@ -92,6 +92,11 @@ func (iter *StringIter) Seek(c byte) bool {
 	return false
 }
 
+// Moves peek pointer to end of iterator
+func (iter *StringIter) SeekEnd() {
+	iter.peekPos = len(iter.s)
+}
+
 // Returns remaining string from iter pos. Empty string on eof. Does not move pos.
 func (iter *StringIter) Remainder() string {
 	if iter.Eof() {

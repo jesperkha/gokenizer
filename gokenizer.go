@@ -13,8 +13,12 @@ type Tokenizer struct {
 	classes    map[string]matcherFunc
 }
 
-// Matches with the given string. The implementation is dynamically created in createPattern.
+// Matches with the given string. The implementation is dynamically created
+// in createPattern.
 type matcherFunc func(iter *stringiter.StringIter) Token
+
+// Returns true if the character b is part of the class.
+type CheckerFunc func(b byte) bool
 
 func New() Tokenizer {
 	return Tokenizer{
@@ -38,13 +42,18 @@ func (t *Tokenizer) Pattern(pattern string, f func(Token) error) {
 // Class registers a new class with the given matcher function. The function
 // should return true for any byte that is a legal character in the class.
 // The class cannot override any existing names.
-func (t *Tokenizer) Class(name string, check func(byte) bool) {
+func (t *Tokenizer) Class(name string, check CheckerFunc) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
 		return
 	}
 
-	t.classes[name] = func(iter *stringiter.StringIter) Token {
+	t.classes[name] = checkFuncToMatchFunc(name, check)
+}
+
+// Convert boolean checker function to token matcher function.
+func checkFuncToMatchFunc(class string, check CheckerFunc) matcherFunc {
+	return func(iter *stringiter.StringIter) Token {
 		pos := iter.Pos()
 		word := ""
 
@@ -57,7 +66,7 @@ func (t *Tokenizer) Class(name string, check func(byte) bool) {
 			Lexeme:  word,
 			Source:  iter.Source(),
 			Length:  len(word),
-			class:   name,
+			class:   class,
 			matched: len(word) > 0,
 		}
 	}

@@ -43,35 +43,35 @@ var classes = map[string]matcherFunc{
 	},
 
 	"word": func(iter *stringiter.StringIter) Token {
-		word := ""
-
-		for isLetter(iter.Peek()) {
-			word += iter.Consume()
-		}
-
-		return Token{
-			Lexeme:  word,
-			matched: len(word) > 0,
-		}
+		return checkFuncToMatchFunc("word", func(b byte) bool {
+			return isLetter(b)
+		})(iter)
 	},
 
 	"number": func(iter *stringiter.StringIter) Token {
-		number := ""
-
-		for isNumber(iter.Peek()) {
-			number += iter.Consume()
-		}
-
-		return Token{
-			Lexeme:  number,
-			matched: len(number) > 0,
-		}
+		return checkFuncToMatchFunc("word", func(b byte) bool {
+			return isNumber(b)
+		})(iter)
 	},
 
 	"symbol": func(iter *stringiter.StringIter) Token {
 		if isSymbol(iter.Peek()) {
 			return Token{
 				Lexeme:  iter.Consume(),
+				matched: true,
+			}
+		}
+
+		return Token{matched: false}
+	},
+
+	"line": func(iter *stringiter.StringIter) Token {
+		if iter.Seek('\n') {
+			line := iter.Consume()
+			iter.Consume() // Consume newline to prevent infinite loop
+
+			return Token{
+				Lexeme:  line,
 				matched: true,
 			}
 		}

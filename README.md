@@ -25,6 +25,7 @@ The following classes are defined by default:
 - `word`: any alphabetical string
 - `number`: any numerical string
 - `symbol`: any printable ascii character that is not a number or letter
+- `line`: gets all characters before a newline character `\n`
 - `lbrace` and `rbrace`: for a static `{` and `}` respectively
 
 ## Basic example

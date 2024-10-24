@@ -239,22 +239,17 @@ func TestNestedParsing(t *testing.T) {
 	output := []string{}
 
 	tokr := gokenizer.New()
-	lineParser := gokenizer.New()
-
-	tokr.Class("line", func(b byte) bool {
-		return b != '\n'
-	})
 
 	tokr.Pattern("{line}", func(t gokenizer.Token) error {
-		return lineParser.Run(t.Get("line").Lexeme)
+		return tokr.Run(t.Get("line").Lexeme)
 	})
 
-	lineParser.Pattern("{number},{number},{number}", func(t gokenizer.Token) error {
+	tokr.Pattern("{number},{number},{number}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
 		return nil
 	})
 
-	lineParser.Pattern("{word},{word},{word}", func(t gokenizer.Token) error {
+	tokr.Pattern("{word},{word},{word}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
 		return nil
 	})
