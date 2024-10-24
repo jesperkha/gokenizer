@@ -13,10 +13,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21.x'
+          go-version: '1.22.x'
       - name: Install dependencies
         run: |
           go mod tidy
           go get .
       - name: Test
         run: go test ./test
+      - name: Check format
+        run: gofmt -l
