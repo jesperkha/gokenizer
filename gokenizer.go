@@ -89,6 +89,11 @@ func (t *Tokenizer) ClassFromPattern(name string, pattern string) {
 	t.classes[name] = f
 }
 
+// ClassAny creates a new class that matches any of the given patterns.
+func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
+	// Todo: ...
+}
+
 // Run tokenizer on given input string. Returns first error received by a
 // pattern callback function. Patterns are matched by the order the are
 // defined in.
@@ -175,6 +180,9 @@ func parseClass(iter *stringiter.StringIter) (name string, err error) {
 // Returns two equal length lists of matcher functions and their class names.
 func (t *Tokenizer) parsePattern(pattern string) (funcs []matcherFunc, classNames []string, err error) {
 	pIter := stringiter.New(pattern)
+
+	// Todo: check for static pattern after class and do lookahead parsing
+	// to prevent cases like "{word}bar"
 
 	for !pIter.Eof() {
 		if pIter.Peek() == '{' {
