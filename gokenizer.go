@@ -91,7 +91,42 @@ func (t *Tokenizer) ClassFromPattern(name string, pattern string) {
 
 // ClassAny creates a new class that matches any of the given patterns.
 func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
-	// Todo: ...
+	if _, err := t.getClass(name); err == nil {
+		t.err = fmt.Errorf("class '%s' already defined", name)
+		return
+	}
+
+	if len(patterns) == 0 {
+		t.err = fmt.Errorf("ClassAny: you must provide at least one pattern")
+	}
+
+	funcs := []matcherFunc{}
+
+	for _, pattern := range patterns {
+		mf, err := t.createMatcherFunc(pattern, "")
+		if err != nil {
+			t.err = err
+			return
+		}
+		funcs = append(funcs, mf)
+	}
+
+	f := func(iter *stringiter.StringIter) Token {
+		for _, mf := range funcs {
+			iter.Push()
+			tok := mf(iter)
+
+			if tok.matched {
+				return tok
+			}
+
+			iter.Pop()
+		}
+
+		return Token{matched: false}
+	}
+
+	t.classes[name] = f
 }
 
 // Run tokenizer on given input string. Returns first error received by a
@@ -99,7 +134,7 @@ func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
 // defined in.
 func (t *Tokenizer) Run(s string) error {
 	if t.err != nil {
-		return t.err
+		return fmt.Errorf("gokenizer: %s", t.err.Error())
 	}
 
 	iter := stringiter.New(s)
@@ -141,8 +176,7 @@ func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 		values: result.values,
 	}
 
-	err := t.callbacks[callbackIdx](token)
-	return err
+	return t.callbacks[callbackIdx](token)
 }
 
 // Returns a function that matches the string literal s.
@@ -157,7 +191,7 @@ func literalMatcherFunc(s string) matcherFunc {
 			Pos:     pos,
 			Length:  len(lexeme),
 			Source:  iter.Source(),
-			class:   "static",
+			class:   "",
 			matched: lexeme == s,
 		}
 	}
@@ -208,11 +242,11 @@ func (t *Tokenizer) parsePattern(pattern string) (funcs []matcherFunc, className
 			}
 
 			funcs = append(funcs, literalMatcherFunc(staticWord))
-			classNames = append(classNames, "static")
+			classNames = append(classNames, "")
 		} else {
 			// Otherwise the rest of the pattern string is a static word
 			funcs = append(funcs, literalMatcherFunc(pIter.Remainder()))
-			classNames = append(classNames, "static")
+			classNames = append(classNames, "")
 			break
 		}
 	}
@@ -256,7 +290,7 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 			tempResult.Length = len(tempResult.Lexeme)
 			tempResult.Source = iter.Source()
 
-			if className := classNames[idx]; className != "static" {
+			if className := classNames[idx]; className != "" {
 				values[className] = append(values[className], tempResult)
 			}
 		}
