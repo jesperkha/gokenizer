@@ -32,16 +32,16 @@ The following classes are defined by default:
 
 ```go
 func main() {
-	tokr := gokenizer.New()
+    tokr := gokenizer.New()
 
-	// Create a pattern that looks for any word ending with a !
-	tokr.Pattern("{word}!", func(tok gokenizer.Token) error {
-		fmt.Println(tok.Lexeme)
-		return nil
-	})
+    // Create a pattern that looks for any word ending with a !
+    tokr.Pattern("{word}!", func(tok gokenizer.Token) error {
+        fmt.Println(tok.Lexeme)
+        return nil
+    })
 
-	// Run the tokenizer on a given string
-	fmt.Println(tokr.Run("foo! 123 + bar"))
+    // Run the tokenizer on a given string
+    tokr.Run("foo! 123 + bar")
 }
 ```
 
