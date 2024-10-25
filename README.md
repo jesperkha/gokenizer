@@ -118,3 +118,45 @@ tokr.Run("username: John")
 $ go run .
 John
 ```
+
+## Example: Parsing a .env file
+
+```go
+func main() {
+    b, err := os.ReadFile(".env")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+
+    tokr := gokenizer.New()
+
+    tokr.ClassPattern("comment", "#{line}")
+    tokr.ClassOptional("space?", " ")
+
+    // Syntactic sugar
+    tokr.ClassPattern("key", "{word}")
+    tokr.ClassPattern("value", "{line}")
+
+    tokr.ClassPattern("keyValue", "{key}{space?}={space?}{value}")
+
+    // Prints all key value pairs
+    tokr.Pattern("{keyValue}", func(t gokenizer.Token) error {
+        key := t.Get("keyValue").Get("key")
+        value := t.Get("keyValue").Get("value")
+
+        fmt.Printf("Key: %s, Value: %s", key.Lexeme, value.Lexeme)
+        return nil
+    })
+
+    // Prints all comments
+    tokr.Pattern("{comment}", func(t gokenizer.Token) error {
+        line := t.Lexeme[:len(t.Lexeme)-1] // Remove newline
+        fmt.Println("Comment: " + line)
+        return nil
+    })
+
+    tokr.Run(string(b))
+}
+```
+
