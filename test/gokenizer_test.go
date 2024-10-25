@@ -204,13 +204,18 @@ func TestUserClass(t *testing.T) {
 
 func TestUserPatternClass(t *testing.T) {
 	input := "var foo = 123;"
+	expect := strings.Split(input, "\n")
+	output := []string{}
+
 	tokr := gokenizer.New()
 
-	tokr.ClassFromPattern("variable", "{word}")
-	tokr.ClassFromPattern("onetwothree", "123")
-	tokr.ClassFromPattern("declaration", "var {variable} = {onetwothree}")
+	tokr.ClassPattern("variable", "{word}")
+	tokr.ClassPattern("onetwothree", "123")
+	tokr.ClassPattern("declaration", "var {variable} = {onetwothree}")
 
 	tokr.Pattern("{declaration};", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+
 		if t.Lexeme != input {
 			return fmt.Errorf("expected '%s', got '%s'", input, t.Lexeme)
 		}
@@ -231,6 +236,10 @@ func TestUserPatternClass(t *testing.T) {
 	if err := tokr.Run(input); err != nil {
 		t.Error(err)
 	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
 }
 
 func TestNestedParsing(t *testing.T) {
@@ -250,6 +259,103 @@ func TestNestedParsing(t *testing.T) {
 	})
 
 	tokr.Pattern("{word},{word},{word}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestClassAny(t *testing.T) {
+	input := "123 foo! hello"
+	expect := []string{"123", "foo!", "hello"}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	tokr.ClassAny("any", "{number}", "{word}{symbol}", "hello")
+
+	tokr.Pattern("{any}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		if w := t.Get("any").Get("number").Lexeme; w != "" && w != "123" {
+			return fmt.Errorf("expected '%s', got '%s'", "123", w)
+		}
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestEmptyPattern(t *testing.T) {
+	input := "a= b"
+	expect := []string{"a= b"}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	// Whitespace
+	tokr.ClassAny("ws", " ", "")
+
+	tokr.ClassPattern("foo", "{word}{ws}{symbol}{ws}{word}")
+
+	tokr.Pattern("{foo}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestDeepNesting(t *testing.T) {
+	input := ""
+	expect := []string{}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	tokr.Pattern("", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestClassOptional(t *testing.T) {
+	input := "foo =bar;"
+	expect := []string{input}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	tokr.ClassOptional("semicolon?", ";")
+	tokr.ClassOptional("space?", " ")
+
+	tokr.Pattern("{word}{space?}={space?}{word}{semicolon?}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
 		return nil
 	})
