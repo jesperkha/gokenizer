@@ -297,3 +297,50 @@ func TestClassAny(t *testing.T) {
 		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
 	}
 }
+
+func TestEmptyPattern(t *testing.T) {
+	input := "a= b"
+	expect := []string{"a= b"}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	// Whitespace
+	tokr.ClassFromAny("ws", " ", "")
+
+	tokr.ClassFromPattern("foo", "{word}{ws}{symbol}{ws}{word}")
+
+	tokr.Pattern("{foo}", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestDeepNesting(t *testing.T) {
+	input := ""
+	expect := []string{}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	tokr.Pattern("", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}

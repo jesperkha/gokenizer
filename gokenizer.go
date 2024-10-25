@@ -75,21 +75,11 @@ func checkFuncToMatchFunc(class string, check CheckerFunc) matcherFunc {
 // ClassFromPattern creates a new class that matches to the given pattern.
 // The class cannot override any existing names.
 func (t *Tokenizer) ClassFromPattern(name string, pattern string) {
-	if _, err := t.getClass(name); err == nil {
-		t.err = fmt.Errorf("class '%s' already defined", name)
-		return
-	}
-
-	f, err := t.createMatcherFunc(pattern, name)
-	if err != nil {
-		t.err = err
-		return
-	}
-
-	t.classes[name] = f
+	t.ClassFromAny(name, pattern)
 }
 
 // ClassAny creates a new class that matches any of the given patterns.
+// Todo: sort patterns by length to prevent shortcircuiting
 func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
@@ -112,15 +102,33 @@ func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
 	}
 
 	f := func(iter *stringiter.StringIter) Token {
+		pos := iter.Pos()
+
 		for _, mf := range funcs {
 			iter.Push()
 			tok := mf(iter)
+			l := iter.Pop()
 
-			if tok.matched {
-				return tok
+			if !tok.matched {
+				continue
 			}
 
-			iter.Pop()
+			// Do not consume if length is 0
+			lexeme := tok.Lexeme
+			if l != 0 {
+				iter.PeekN(uint(l))
+				lexeme = iter.Consume()
+			}
+
+			return Token{
+				Pos:     pos,
+				Lexeme:  lexeme,
+				Length:  len(lexeme),
+				Source:  iter.Source(),
+				class:   name,
+				values:  tok.values,
+				matched: true,
+			}
 		}
 
 		return Token{matched: false}
@@ -269,6 +277,16 @@ func (t *Tokenizer) getClass(name string) (mf matcherFunc, err error) {
 
 // Returns a function that matches based on the given pattern.
 func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherFunc, err error) {
+	if pattern == "" {
+		return func(iter *stringiter.StringIter) Token {
+			return Token{
+				Pos:     iter.Pos(),
+				Source:  iter.Source(),
+				matched: true,
+			}
+		}, err
+	}
+
 	funcs, classNames, err := t.parsePattern(pattern)
 	if err != nil {
 		return mf, err
