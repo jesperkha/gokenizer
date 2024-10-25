@@ -209,9 +209,9 @@ func TestUserPatternClass(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.ClassFromPattern("variable", "{word}")
-	tokr.ClassFromPattern("onetwothree", "123")
-	tokr.ClassFromPattern("declaration", "var {variable} = {onetwothree}")
+	tokr.ClassPattern("variable", "{word}")
+	tokr.ClassPattern("onetwothree", "123")
+	tokr.ClassPattern("declaration", "var {variable} = {onetwothree}")
 
 	tokr.Pattern("{declaration};", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
@@ -279,7 +279,7 @@ func TestClassAny(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.ClassFromAny("any", "{number}", "{word}{symbol}", "hello")
+	tokr.ClassAny("any", "{number}", "{word}{symbol}", "hello")
 
 	tokr.Pattern("{any}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
@@ -306,9 +306,9 @@ func TestEmptyPattern(t *testing.T) {
 	tokr := gokenizer.New()
 
 	// Whitespace
-	tokr.ClassFromAny("ws", " ", "")
+	tokr.ClassAny("ws", " ", "")
 
-	tokr.ClassFromPattern("foo", "{word}{ws}{symbol}{ws}{word}")
+	tokr.ClassPattern("foo", "{word}{ws}{symbol}{ws}{word}")
 
 	tokr.Pattern("{foo}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
@@ -332,6 +332,30 @@ func TestDeepNesting(t *testing.T) {
 	tokr := gokenizer.New()
 
 	tokr.Pattern("", func(t gokenizer.Token) error {
+		output = append(output, t.Lexeme)
+		return nil
+	})
+
+	if err := tokr.Run(input); err != nil {
+		t.Error(err)
+	}
+
+	if slices.Compare(expect, output) != 0 {
+		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
+	}
+}
+
+func TestClassOptional(t *testing.T) {
+	input := "foo =bar;"
+	expect := []string{input}
+	output := []string{}
+
+	tokr := gokenizer.New()
+
+	tokr.ClassOptional("semicolon?", ";")
+	tokr.ClassOptional("space?", " ")
+
+	tokr.Pattern("{word}{space?}={space?}{word}{semicolon?}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
 		return nil
 	})

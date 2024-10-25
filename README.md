@@ -87,20 +87,23 @@ username 123
 You can create a new class a few different ways:
 
 - `.Class()`: takes the class name and a function that returns true as long as the given character is part of your class.
-- `.ClassFromPattern()`: takes a class name and a pattern it uses.
-- `.ClassFromAny()`: takes a class name and a list of patterns, of which only one has to match.
+- `.ClassPattern()`: takes a class name and a pattern it uses.
+- `.ClassAny()`: takes a class name and a list of patterns, of which only one has to match.
+- `.ClassOptional()`: takes a class name and a list of patterns, of which one *or* none have to match.
 
 ```go
 tokr.Class("notA", func (b byte) bool {
     return b != 'A'
 })
 
-tokr.ClassFromPattern("username", "username: {word}")
+tokr.ClassPattern("username", "username: {word}")
 
 tokr.ClassAny("games", "Elden Ring", "The Sims {number}")
+
+tokr.ClassOptional("whitespace", " ", "\t")
 ```
 
-When you have nested classes as in the `.ClassFromPattern()` and `.ClassFromAny()` examples above, you can still access the value of each previous class:
+When you have nested classes as in the `.ClassPattern()` and `.ClassAny()` examples above, you can still access the value of each previous class:
 
 ```go
 tokr.Pattern("{username}", func (tok gokenizer.Token) error {

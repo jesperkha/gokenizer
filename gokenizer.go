@@ -72,15 +72,22 @@ func checkFuncToMatchFunc(class string, check CheckerFunc) matcherFunc {
 	}
 }
 
-// ClassFromPattern creates a new class that matches to the given pattern.
+// ClassPattern creates a new class that matches to the given pattern.
 // The class cannot override any existing names.
-func (t *Tokenizer) ClassFromPattern(name string, pattern string) {
-	t.ClassFromAny(name, pattern)
+func (t *Tokenizer) ClassPattern(name string, pattern string) {
+	t.ClassAny(name, pattern)
+}
+
+// ClassOptional creates a new class that matches any or none of the given patterns.
+// The class cannot override any existing names.
+func (t *Tokenizer) ClassOptional(name string, patterns ...string) {
+	patterns = append(patterns, "")
+	t.ClassAny(name, patterns...)
 }
 
 // ClassAny creates a new class that matches any of the given patterns.
 // Todo: sort patterns by length to prevent shortcircuiting
-func (t *Tokenizer) ClassFromAny(name string, patterns ...string) {
+func (t *Tokenizer) ClassAny(name string, patterns ...string) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
 		return
@@ -294,7 +301,6 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 
 	f := func(iter *stringiter.StringIter) (res Token) {
 		pos := iter.Pos()
-		iter.Push()
 		values := make(map[string][]Token)
 
 		for idx, mf := range funcs {
@@ -313,9 +319,7 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 			}
 		}
 
-		length := iter.Pop()
-		iter.PeekN(uint(length))
-		matchedString := iter.Consume()
+		matchedString := iter.Source()[pos:iter.Pos()]
 
 		return Token{
 			Lexeme:  matchedString,
