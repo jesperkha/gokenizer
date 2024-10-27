@@ -38,6 +38,22 @@ func TestClassParser(t *testing.T) {
 	if err := tokr.Run(""); err != nil {
 		t.Fatal(err)
 	}
+
+	tokr.Pattern("foo{barl", func(t gokenizer.Token) error {
+		return nil
+	})
+
+	if err := tokr.Run(""); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	tokr.Pattern("}", func(t gokenizer.Token) error {
+		return nil
+	})
+
+	if err := tokr.Run(""); err == nil {
+		t.Fatal("expected error, got nil")
+	}
 }
 
 func makeClassTester(className, input, expected string) func(*testing.T) {
