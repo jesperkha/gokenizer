@@ -19,6 +19,16 @@ func isSymbol(c byte) bool {
 	return strings.Contains(s, string(c))
 }
 
+func isBase64(c byte) bool {
+	s := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+	return strings.Contains(s, string(c))
+}
+
+func isHex(c byte) bool {
+	s := "ABCDEFabcdef0123456789#"
+	return strings.Contains(s, string(c))
+}
+
 var classes = map[string]matcherFunc{
 	"lbrace": func(iter *stringiter.StringIter) Token {
 		if iter.Peek() == '{' {
@@ -48,9 +58,27 @@ var classes = map[string]matcherFunc{
 		})(iter)
 	},
 
+	"base64": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("base64", func(b byte) bool {
+			return isBase64(b)
+		})(iter)
+	},
+
+	"hex": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("hex", func(b byte) bool {
+			return isHex(b)
+		})(iter)
+	},
+
 	"number": func(iter *stringiter.StringIter) Token {
 		return checkFuncToMatchFunc("word", func(b byte) bool {
 			return isNumber(b)
+		})(iter)
+	},
+
+	"float": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("float", func(b byte) bool {
+			return isNumber(b) || b == '.'
 		})(iter)
 	},
 
@@ -72,6 +100,17 @@ var classes = map[string]matcherFunc{
 
 			return Token{
 				Lexeme:  line,
+				matched: true,
+			}
+		}
+
+		return Token{matched: false}
+	},
+
+	"char": func(iter *stringiter.StringIter) Token {
+		if isLetter(iter.Peek()) {
+			return Token{
+				Lexeme:  iter.Consume(),
 				matched: true,
 			}
 		}

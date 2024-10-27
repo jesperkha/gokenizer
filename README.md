@@ -22,11 +22,15 @@ pattern := "var {word} = {number}"
 
 The following classes are defined by default:
 
+- `lbrace` and `rbrace`: for a static `{` and `}` respectively
 - `word`: any alphabetical string
+- `char`: a single letter
 - `number`: any numerical string
+- `float`: any numerical string including a period `.`
 - `symbol`: any printable ascii character that is not a number or letter
 - `line`: gets all characters before a newline character `\n`
-- `lbrace` and `rbrace`: for a static `{` and `}` respectively
+- `base64`: any base64 string, does not check length
+- `hex`: hexadecimal string, including `#`
 
 ## Basic example
 

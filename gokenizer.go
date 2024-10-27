@@ -86,7 +86,6 @@ func (t *Tokenizer) ClassOptional(name string, patterns ...string) {
 }
 
 // ClassAny creates a new class that matches any of the given patterns.
-// Todo: sort patterns by length to prevent shortcircuiting
 func (t *Tokenizer) ClassAny(name string, patterns ...string) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
@@ -229,9 +228,6 @@ func parseClass(iter *stringiter.StringIter) (name string, err error) {
 // Returns two equal length lists of matcher functions and their class names.
 func (t *Tokenizer) parsePattern(pattern string) (funcs []matcherFunc, classNames []string, err error) {
 	pIter := stringiter.New(pattern)
-
-	// Todo: check for static pattern after class and do lookahead parsing
-	// to prevent cases like "{word}bar"
 
 	for !pIter.Eof() {
 		if pIter.Peek() == '{' {
