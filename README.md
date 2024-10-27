@@ -32,6 +32,8 @@ The following classes are defined by default:
 - `base64`: any base64 string, does not check length
 - `hex`: hexadecimal string, including `#`
 
+Note that patterns are checked in the order they are defined, therefore it is usually preferred to define specific patterns first, and more general ones last. `ClassX` functions have no immediate effect, but must be run before using the defined class.
+
 ## Basic example
 
 ```go
@@ -125,14 +127,10 @@ John
 
 ## Example: Parsing a .env file
 
+Here is an example for a .env file parser that prints out each key-value pair and comment:
+
 ```go
 func main() {
-    b, err := os.ReadFile(".env")
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
-
     tokr := gokenizer.New()
 
     tokr.ClassPattern("comment", "#{line}")
@@ -156,11 +154,23 @@ func main() {
     // Prints all comments
     tokr.Pattern("{comment}", func(t gokenizer.Token) error {
         line := t.Lexeme[:len(t.Lexeme)-1] // Remove newline
+
         fmt.Println("Comment: " + line)
         return nil
     })
+
+    b, err := os.ReadFile(".env")
+    if err != nil {
+        return
+    }
 
     tokr.Run(string(b))
 }
 ```
 
+## Limitations
+
+Gokenizer is designed to be as minimal and straight forward as possible, and therefore comes with a few limitations:
+
+- **No look-ahead parsing:** The tokenizer does not look ahead when parsing patterns, therefore patterns with overlapping match requirements will not work. Example: `{word}bar` will never be matched as any word, including one ending in "bar" will be part of the `word` class. This may be fixed in a later update with a new class/pattern type.
+- **More complex user classes:** Currently you cannot easily define a "complex" class that interacts with the internal string iterator. As of now the idea is for the user to create their own checks in the callback functions to more general patterns. However, more control may be given to the user when creating classes in a later update.
