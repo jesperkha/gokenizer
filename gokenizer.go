@@ -42,7 +42,7 @@ func (t *Tokenizer) Pattern(pattern string, f func(Token) error) {
 // Class registers a new class with the given matcher function. The function
 // should return true for any byte that is a legal character in the class.
 // The class cannot override any existing names.
-func (t *Tokenizer) Class(name string, check CheckerFunc) {
+func (t *Tokenizer) ClassFunc(name string, check CheckerFunc) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
 		return
@@ -51,42 +51,16 @@ func (t *Tokenizer) Class(name string, check CheckerFunc) {
 	t.classes[name] = checkFuncToMatchFunc(name, check)
 }
 
-// Convert boolean checker function to token matcher function.
-func checkFuncToMatchFunc(class string, check CheckerFunc) matcherFunc {
-	return func(iter *stringiter.StringIter) Token {
-		pos := iter.Pos()
-		word := ""
-
-		for !iter.Eof() && check(iter.Peek()) {
-			word += iter.Consume()
-		}
-
-		return Token{
-			Pos:     pos,
-			Lexeme:  word,
-			Source:  iter.Source(),
-			Length:  len(word),
-			class:   class,
-			matched: len(word) > 0,
-		}
-	}
-}
-
-// ClassPattern creates a new class that matches to the given pattern.
-// The class cannot override any existing names.
-func (t *Tokenizer) ClassPattern(name string, pattern string) {
-	t.ClassAny(name, pattern)
-}
-
 // ClassOptional creates a new class that matches any or none of the given patterns.
 // The class cannot override any existing names.
 func (t *Tokenizer) ClassOptional(name string, patterns ...string) {
 	patterns = append(patterns, "")
-	t.ClassAny(name, patterns...)
+	t.Class(name, patterns...)
 }
 
-// ClassAny creates a new class that matches any of the given patterns.
-func (t *Tokenizer) ClassAny(name string, patterns ...string) {
+// Class creates a new class that matches any of the given patterns.
+// The class cannot override any existing names.
+func (t *Tokenizer) Class(name string, patterns ...string) {
 	if _, err := t.getClass(name); err == nil {
 		t.err = fmt.Errorf("class '%s' already defined", name)
 		return
@@ -191,6 +165,27 @@ func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	}
 
 	return t.callbacks[callbackIdx](token)
+}
+
+// Convert boolean checker function to token matcher function.
+func checkFuncToMatchFunc(class string, check CheckerFunc) matcherFunc {
+	return func(iter *stringiter.StringIter) Token {
+		pos := iter.Pos()
+		word := ""
+
+		for !iter.Eof() && check(iter.Peek()) {
+			word += iter.Consume()
+		}
+
+		return Token{
+			Pos:     pos,
+			Lexeme:  word,
+			Source:  iter.Source(),
+			Length:  len(word),
+			class:   class,
+			matched: len(word) > 0,
+		}
+	}
 }
 
 // Returns a function that matches the string literal s.

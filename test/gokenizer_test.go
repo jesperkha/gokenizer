@@ -202,7 +202,7 @@ func TestUserClass(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.Class("math", func(b byte) bool {
+	tokr.ClassFunc("math", func(b byte) bool {
 		return strings.Contains("+-/*=", string(b))
 	})
 
@@ -225,9 +225,9 @@ func TestUserPatternClass(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.ClassPattern("variable", "{word}")
-	tokr.ClassPattern("onetwothree", "123")
-	tokr.ClassPattern("declaration", "var {variable} = {onetwothree}")
+	tokr.Class("variable", "{word}")
+	tokr.Class("onetwothree", "123")
+	tokr.Class("declaration", "var {variable} = {onetwothree}")
 
 	tokr.Pattern("{declaration};", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
@@ -295,7 +295,7 @@ func TestClassAny(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.ClassAny("any", "{number}", "{word}{symbol}", "hello")
+	tokr.Class("any", "{number}", "{word}{symbol}", "hello")
 
 	tokr.Pattern("{any}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
@@ -322,9 +322,9 @@ func TestEmptyPattern(t *testing.T) {
 	tokr := gokenizer.New()
 
 	// Whitespace
-	tokr.ClassAny("ws", " ", "")
+	tokr.Class("ws", " ", "")
 
-	tokr.ClassPattern("foo", "{word}{ws}{symbol}{ws}{word}")
+	tokr.Class("foo", "{word}{ws}{symbol}{ws}{word}")
 
 	tokr.Pattern("{foo}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
