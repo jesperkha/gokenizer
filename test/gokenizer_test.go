@@ -324,11 +324,11 @@ func TestClassAny(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.Class("any", "{number}", "{word}{symbol}", "hello")
+	tokr.Class("some", "{number}", "{word}{symbol}", "hello")
 
-	tokr.Pattern("{any}", func(t gokenizer.Token) error {
+	tokr.Pattern("{some}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
-		if w := t.Get("any").Get("number").Lexeme; w != "" && w != "123" {
+		if w := t.Get("some").Get("number").Lexeme; w != "" && w != "123" {
 			return fmt.Errorf("expected '%s', got '%s'", "123", w)
 		}
 		return nil
@@ -349,9 +349,6 @@ func TestEmptyPattern(t *testing.T) {
 	output := []string{}
 
 	tokr := gokenizer.New()
-
-	// Whitespace
-	tokr.Class("ws", " ", "")
 
 	tokr.Class("foo", "{word}{ws}{symbol}{ws}{word}")
 

@@ -30,6 +30,31 @@ func isHex(c byte) bool {
 }
 
 var classes = map[string]matcherFunc{
+	"any": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("any", func(b byte) bool {
+			return true
+		})(iter)
+	},
+
+	"ws": func(iter *stringiter.StringIter) Token {
+		c := ""
+		for !iter.Eof() {
+			b := iter.Peek()
+			if b == ' ' || b == '\t' || b == '\n' || b == '\r' {
+				c += iter.Consume()
+				continue
+			}
+			break
+		}
+		return Token{matched: true, Lexeme: c}
+	},
+
+	"text": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("text", func(b byte) bool {
+			return !(b == ' ' || b == '\t' || b == '\n' || b == '\r')
+		})(iter)
+	},
+
 	"lbrace": func(iter *stringiter.StringIter) Token {
 		if iter.Peek() == '{' {
 			return Token{
@@ -77,7 +102,7 @@ var classes = map[string]matcherFunc{
 	},
 
 	"number": func(iter *stringiter.StringIter) Token {
-		return checkFuncToMatchFunc("word", func(b byte) bool {
+		return checkFuncToMatchFunc("number", func(b byte) bool {
 			return isNumber(b)
 		})(iter)
 	},
@@ -131,7 +156,8 @@ var classes = map[string]matcherFunc{
 
 			if iter.Seek('"') {
 				// Consumes string content, then terminating quote
-				str := "\"" + iter.Consume() + iter.Consume()
+				str := iter.Consume()
+				iter.Consume()
 				return Token{
 					Lexeme:  str,
 					matched: true,
