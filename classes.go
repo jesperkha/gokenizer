@@ -58,6 +58,12 @@ var classes = map[string]matcherFunc{
 		})(iter)
 	},
 
+	"var": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("var", func(b byte) bool {
+			return isLetter(b) || b == '$' || b == '_'
+		})(iter)
+	},
+
 	"base64": func(iter *stringiter.StringIter) Token {
 		return checkFuncToMatchFunc("base64", func(b byte) bool {
 			return isBase64(b)
@@ -113,6 +119,26 @@ var classes = map[string]matcherFunc{
 				Lexeme:  iter.Consume(),
 				matched: true,
 			}
+		}
+
+		return Token{matched: false}
+	},
+
+	"string": func(iter *stringiter.StringIter) Token {
+		if iter.Peek() == '"' {
+			iter.Push()
+			iter.Consume()
+
+			if iter.Seek('"') {
+				// Consumes string content, then terminating quote
+				str := "\"" + iter.Consume() + iter.Consume()
+				return Token{
+					Lexeme:  str,
+					matched: true,
+				}
+			}
+
+			iter.Pop()
 		}
 
 		return Token{matched: false}

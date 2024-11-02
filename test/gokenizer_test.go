@@ -56,7 +56,7 @@ func TestClassParser(t *testing.T) {
 	}
 }
 
-func makeClassTester(className, input, expected string) func(*testing.T) {
+func makeClassTester(className string, inputs, expected []string) func(*testing.T) {
 	return func(t *testing.T) {
 		tokr := gokenizer.New()
 		word := ""
@@ -66,23 +66,52 @@ func makeClassTester(className, input, expected string) func(*testing.T) {
 			return nil
 		})
 
-		if err := tokr.Run(input); err != nil {
-			t.Error(err)
-		}
+		for i, input := range inputs {
+			if err := tokr.Run(input); err != nil {
+				t.Error(err)
+			}
 
-		if word != expected {
-			t.Errorf("expected '%s', got '%s'", expected, word)
+			if word != expected[i] {
+				t.Errorf("expected '%s', got '%s'", expected[i], word)
+			}
+
+			word = ""
 		}
 	}
 }
 
 func TestClasses(t *testing.T) {
-	input := "golang123!"
-
 	tests := []func(*testing.T){
-		makeClassTester("word", input, "golang"),
-		makeClassTester("number", input, "123"),
-		makeClassTester("symbol", input, "!"),
+		makeClassTester(
+			"word",
+			[]string{"foo", "foo bar", "123foo!"},
+			[]string{"foo", "bar", "foo"},
+		),
+		makeClassTester(
+			"var",
+			[]string{"$foo", "foo_bar"},
+			[]string{"$foo", "foo_bar"},
+		),
+		makeClassTester(
+			"number",
+			[]string{"1", "1234", "123foo!"},
+			[]string{"1", "1234", "123"},
+		),
+		makeClassTester(
+			"string",
+			[]string{"\"hello\"", "\"foo", "foo\"", "foo\"bar\"faz"},
+			[]string{"\"hello\"", "", "", "\"bar\""},
+		),
+		makeClassTester(
+			"hex",
+			[]string{"abc", "#FF01AB", "golang"},
+			[]string{"abc", "#FF01AB", "a"},
+		),
+		makeClassTester(
+			"base64",
+			[]string{"(aGVsbG8gd29ybGQ=)"},
+			[]string{"aGVsbG8gd29ybGQ="},
+		),
 	}
 
 	for i, tt := range tests {
