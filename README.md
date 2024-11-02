@@ -133,43 +133,43 @@ The following example demonstrates how gokenizer can be used to make a robust pa
 
 ```go
 func parseEnv(file string) (kv map[string]string, err error) {
-	kv = make(map[string]string)
+    kv = make(map[string]string)
 
-	tokr := gokenizer.New()
+    tokr := gokenizer.New()
 
-	tokr.Class("key", "{var}")
-	tokr.Class("value", "{string}", "{text}")
+    tokr.Class("key", "{var}")
+    tokr.Class("value", "{string}", "{text}")
 
-	tokr.Class("keyValue", "{ws}{key}{ws}={ws}{value}")
-	tokr.Class("comment", "#{any}")
+    tokr.Class("keyValue", "{ws}{key}{ws}={ws}{value}")
+    tokr.Class("comment", "#{any}")
 
-	tokr.Class("expression", "{comment}", "{keyValue}")
+    tokr.Class("expression", "{comment}", "{keyValue}")
 
-	tokr.Pattern("{expression}", func(t gokenizer.Token) error {
-		keyval := t.Get("expression").Get("keyValue")
+    tokr.Pattern("{expression}", func(t gokenizer.Token) error {
+        keyval := t.Get("expression").Get("keyValue")
 
-		if keyval.Length != 0 {
-			key := keyval.Get("key").Lexeme
-			value := keyval.Get("value").Lexeme
+        if keyval.Length != 0 {
+            key := keyval.Get("key").Lexeme
+            value := keyval.Get("value").Lexeme
 
-			// Convert value to env friendly text
-			value = strings.ReplaceAll(value, "\"", "")    // Remove quotes
-			value = strings.ReplaceAll(value, "\\n", "\n") // Put newlines
+            // Convert value to env friendly text
+            value = strings.ReplaceAll(value, "\"", "")    // Remove quotes
+            value = strings.ReplaceAll(value, "\\n", "\n") // Put newlines
 
-			kv[key] = value
-		}
+            kv[key] = value
+        }
 
-		return nil
-	})
+        return nil
+    })
 
-	// Run for each line
-	for _, line := range strings.Split(file, "\n") {
-		if err = tokr.Run(line); err != nil {
-			return kv, err
-		}
-	}
+    // Run for each line
+    for _, line := range strings.Split(file, "\n") {
+        if err = tokr.Run(line); err != nil {
+            return kv, err
+        }
+    }
 
-	return kv, err
+    return kv, err
 }
 ```
 
