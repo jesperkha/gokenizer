@@ -4,7 +4,7 @@
 
 <img src=".github/assets/logo.png" width="50%"></img>
 
-*A simple text tokenizer*
+_A simple text tokenizer_
 
 </div>
 
@@ -12,7 +12,7 @@
 
 ## How it works
 
-Gokenizer uses pattern strings composed of *static* words and *classes*.
+Gokenizer uses pattern strings composed of _static_ words and _classes_.
 
 ```go
 pattern := "var {word} = {number}"
@@ -24,6 +24,8 @@ The following classes are defined by default:
 
 - `lbrace` and `rbrace`: for a static `{` and `}` respectively
 - `word`: any alphabetical string
+- `var`: variable name, same as word in addition to `$` and `_`
+- `text`: any string of text that is not whitespace
 - `char`: a single letter
 - `number`: any numerical string
 - `float`: any numerical string including a period `.`
@@ -31,6 +33,9 @@ The following classes are defined by default:
 - `line`: gets all characters before a newline character `\n`
 - `base64`: any base64 string, does not check length
 - `hex`: hexadecimal string, including `#`
+- `string`: anything between two quotes `"`, excluding the quotes
+- `ws`: whitespace: spaces, tabs, newlines, or nothing
+- `any`: matches everything
 
 Note that patterns are checked in the order they are defined, therefore it is usually preferred to define specific patterns first, and more general ones last. `ClassX` functions have no immediate effect, but must be run before using the defined class.
 
@@ -92,24 +97,21 @@ username 123
 
 You can create a new class a few different ways:
 
-- `.Class()`: takes the class name and a function that returns true as long as the given character is part of your class.
-- `.ClassPattern()`: takes a class name and a pattern it uses.
-- `.ClassAny()`: takes a class name and a list of patterns, of which only one has to match.
-- `.ClassOptional()`: takes a class name and a list of patterns, of which one *or* none have to match.
+- `.ClassFunc()`: takes the class name and a function that returns true as long as the given character is part of your class.
+- `.Class()`: takes a class name and a list of patterns, of which only one has to match.
+- `.ClassOptional()`: takes a class name and a list of patterns, of which one _or_ none have to match.
 
 ```go
-tokr.Class("notA", func (b byte) bool {
+tokr.ClassFunc("notA", func (b byte) bool {
     return b != 'A'
 })
 
-tokr.ClassPattern("username", "username: {word}")
-
-tokr.ClassAny("games", "Elden Ring", "The Sims {number}")
+tokr.Class("games", "Elden Ring", "The Sims {number}")
 
 tokr.ClassOptional("whitespace", " ", "\t")
 ```
 
-When you have nested classes as in the `.ClassPattern()` and `.ClassAny()` examples above, you can still access the value of each previous class:
+When you have nested classes as in the `.Class()` example above, you can still access the value of each previous class:
 
 ```go
 tokr.Pattern("{username}", func (tok gokenizer.Token) error {
@@ -127,44 +129,47 @@ John
 
 ## Example: Parsing a .env file
 
-Here is an example for a .env file parser that prints out each key-value pair and comment:
+The following example demonstrates how gokenizer can be used to make a robust parser for a .env file. It is tested on [this file](test/example.env).
 
 ```go
-func main() {
+func parseEnv(file string) (kv map[string]string, err error) {
+    kv = make(map[string]string)
+
     tokr := gokenizer.New()
 
-    tokr.ClassPattern("comment", "#{line}")
-    tokr.ClassOptional("space?", " ")
+    tokr.Class("key", "{var}")
+    tokr.Class("value", "{string}", "{text}")
 
-    // Syntactic sugar
-    tokr.ClassPattern("key", "{word}")
-    tokr.ClassPattern("value", "{line}")
+    tokr.Class("keyValue", "{ws}{key}{ws}={ws}{value}")
+    tokr.Class("comment", "#{any}")
 
-    tokr.ClassPattern("keyValue", "{key}{space?}={space?}{value}")
+    tokr.Class("expression", "{comment}", "{keyValue}")
 
-    // Prints all key value pairs
-    tokr.Pattern("{keyValue}", func(t gokenizer.Token) error {
-        key := t.Get("keyValue").Get("key")
-        value := t.Get("keyValue").Get("value")
+    tokr.Pattern("{expression}", func(t gokenizer.Token) error {
+        keyval := t.Get("expression").Get("keyValue")
 
-        fmt.Printf("Key: %s, Value: %s", key.Lexeme, value.Lexeme)
+        if keyval.Length != 0 {
+            key := keyval.Get("key").Lexeme
+            value := keyval.Get("value").Lexeme
+
+            // Convert value to env friendly text
+            value = strings.ReplaceAll(value, "\"", "")    // Remove quotes
+            value = strings.ReplaceAll(value, "\\n", "\n") // Put newlines
+
+            kv[key] = value
+        }
+
         return nil
     })
 
-    // Prints all comments
-    tokr.Pattern("{comment}", func(t gokenizer.Token) error {
-        line := t.Lexeme[:len(t.Lexeme)-1] // Remove newline
-
-        fmt.Println("Comment: " + line)
-        return nil
-    })
-
-    b, err := os.ReadFile(".env")
-    if err != nil {
-        return
+    // Run for each line
+    for _, line := range strings.Split(file, "\n") {
+        if err = tokr.Run(line); err != nil {
+            return kv, err
+        }
     }
 
-    tokr.Run(string(b))
+    return kv, err
 }
 ```
 

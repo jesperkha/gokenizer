@@ -30,6 +30,31 @@ func isHex(c byte) bool {
 }
 
 var classes = map[string]matcherFunc{
+	"any": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("any", func(b byte) bool {
+			return true
+		})(iter)
+	},
+
+	"ws": func(iter *stringiter.StringIter) Token {
+		c := ""
+		for !iter.Eof() {
+			b := iter.Peek()
+			if b == ' ' || b == '\t' || b == '\n' || b == '\r' {
+				c += iter.Consume()
+				continue
+			}
+			break
+		}
+		return Token{matched: true, Lexeme: c}
+	},
+
+	"text": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("text", func(b byte) bool {
+			return !(b == ' ' || b == '\t' || b == '\n' || b == '\r')
+		})(iter)
+	},
+
 	"lbrace": func(iter *stringiter.StringIter) Token {
 		if iter.Peek() == '{' {
 			return Token{
@@ -58,6 +83,12 @@ var classes = map[string]matcherFunc{
 		})(iter)
 	},
 
+	"var": func(iter *stringiter.StringIter) Token {
+		return checkFuncToMatchFunc("var", func(b byte) bool {
+			return isLetter(b) || b == '$' || b == '_'
+		})(iter)
+	},
+
 	"base64": func(iter *stringiter.StringIter) Token {
 		return checkFuncToMatchFunc("base64", func(b byte) bool {
 			return isBase64(b)
@@ -71,7 +102,7 @@ var classes = map[string]matcherFunc{
 	},
 
 	"number": func(iter *stringiter.StringIter) Token {
-		return checkFuncToMatchFunc("word", func(b byte) bool {
+		return checkFuncToMatchFunc("number", func(b byte) bool {
 			return isNumber(b)
 		})(iter)
 	},
@@ -113,6 +144,27 @@ var classes = map[string]matcherFunc{
 				Lexeme:  iter.Consume(),
 				matched: true,
 			}
+		}
+
+		return Token{matched: false}
+	},
+
+	"string": func(iter *stringiter.StringIter) Token {
+		if iter.Peek() == '"' {
+			iter.Push()
+			iter.Consume()
+
+			if iter.Seek('"') {
+				// Consumes string content, then terminating quote
+				str := iter.Consume()
+				iter.Consume()
+				return Token{
+					Lexeme:  str,
+					matched: true,
+				}
+			}
+
+			iter.Pop()
 		}
 
 		return Token{matched: false}
