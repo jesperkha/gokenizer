@@ -135,6 +135,21 @@ func (t *Tokenizer) Run(s string) error {
 	return nil
 }
 
+// Matches returns true if s matches the given pattern. No other patterns
+// in this tokenizer are matched, but the defined classes apply. Error is
+// non-nil if pattern is malformed.
+func (t *Tokenizer) Matches(s string, pattern string) (matched bool, err error) {
+	iter := stringiter.New(s)
+
+	mf, err := t.createMatcherFunc(pattern, "")
+	if err != nil {
+		return matched, err
+	}
+
+	res := mf(&iter)
+	return res.matched, err
+}
+
 // Continue matching until one is found. Returns callbacks error.
 func (t *Tokenizer) matchNext(iter *stringiter.StringIter) error {
 	callbackIdx := 0

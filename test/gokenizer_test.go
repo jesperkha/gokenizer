@@ -410,3 +410,13 @@ func TestClassOptional(t *testing.T) {
 		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
 	}
 }
+
+func TestMatches(t *testing.T) {
+	tokr := gokenizer.New()
+
+	tokr.Class("username", "{word}{number}")
+
+	if ok, err := tokr.Matches("bob123", "{username}"); !ok || err != nil {
+		t.Errorf("Expected match, got non match and err: %s", err.Error())
+	}
+}

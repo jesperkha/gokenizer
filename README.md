@@ -127,6 +127,18 @@ $ go run .
 John
 ```
 
+## Just checking an expression
+
+You can check if an expression matches a given pattern by using `.Matches()`:
+
+```go
+tokr.Class("username", "{word}", "{word}{number}")
+
+ok, err := tokr.Matches("Henry1999", "{username}")
+```
+
+Callbacks to other patterns will not be called when using this function.
+
 ## Example: Parsing a .env file
 
 The following example demonstrates how gokenizer can be used to make a robust parser for a .env file. It is tested on [this file](test/example.env).
