@@ -185,6 +185,10 @@ func parseEnv(file string) (kv map[string]string, err error) {
 }
 ```
 
+## Projects using gokenizer
+
+- [echo-webkom/cenv](https://github.com/echo-webkom/cenv)
+
 ## Limitations
 
 Gokenizer is designed to be as minimal and straight forward as possible, and therefore comes with a few limitations:
