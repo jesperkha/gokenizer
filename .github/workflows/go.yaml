@@ -19,6 +19,6 @@ jobs:
           go mod tidy
           go get .
       - name: Test
-        run: go test ./test
+        run: go test ./...
       - name: Check format
         run: gofmt -l
