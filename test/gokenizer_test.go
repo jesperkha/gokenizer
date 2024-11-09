@@ -9,6 +9,35 @@ import (
 	"github.com/jesperkha/gokenizer"
 )
 
+func TestInvalidUse(t *testing.T) {
+	tokr := gokenizer.New()
+	if err := tokr.Run(""); err != nil {
+		t.Error(err)
+	}
+
+	// no pattern
+	tokr.Pattern("", func(t gokenizer.Token) error {
+		return nil
+	})
+
+	// no callback
+	tokr.Pattern("foo", nil)
+
+	// invalid class name
+	tokr.Class("{foo}", "bar")
+
+	if err := tokr.Run("123"); err == nil {
+		t.Error("expected error")
+	}
+}
+
+func TestEmpty(t *testing.T) {
+	tokr := gokenizer.New()
+	if err := tokr.Run(""); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestStaticPattern(t *testing.T) {
 	word := "golang"
 	tokr := gokenizer.New()
@@ -366,27 +395,6 @@ func TestEmptyPattern(t *testing.T) {
 	}
 }
 
-func TestDeepNesting(t *testing.T) {
-	input := ""
-	expect := []string{}
-	output := []string{}
-
-	tokr := gokenizer.New()
-
-	tokr.Pattern("", func(t gokenizer.Token) error {
-		output = append(output, t.Lexeme)
-		return nil
-	})
-
-	if err := tokr.Run(input); err != nil {
-		t.Error(err)
-	}
-
-	if slices.Compare(expect, output) != 0 {
-		t.Errorf("expected '%s', got '%s'", strings.Join(expect, "|"), strings.Join(output, "|"))
-	}
-}
-
 func TestClassOptional(t *testing.T) {
 	input := "foo =bar;"
 	expect := []string{input}
@@ -394,16 +402,16 @@ func TestClassOptional(t *testing.T) {
 
 	tokr := gokenizer.New()
 
-	tokr.ClassOptional("semicolon?", ";")
-	tokr.ClassOptional("space?", " ")
+	tokr.ClassOptional("semicolon", ";")
+	tokr.ClassOptional("space", " ")
 
-	tokr.Pattern("{word}{space?}={space?}{word}{semicolon?}", func(t gokenizer.Token) error {
+	tokr.Pattern("{word}{space}={space}{word}{semicolon}", func(t gokenizer.Token) error {
 		output = append(output, t.Lexeme)
 		return nil
 	})
 
 	if err := tokr.Run(input); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if slices.Compare(expect, output) != 0 {
@@ -418,5 +426,9 @@ func TestMatches(t *testing.T) {
 
 	if ok, err := tokr.Matches("bob123", "{username}"); !ok || err != nil {
 		t.Errorf("Expected match, got non match and err: %s", err.Error())
+	}
+
+	if ok, err := tokr.Matches("bob123foo", "{username}"); ok && err == nil {
+		t.Errorf("expected non-match")
 	}
 }

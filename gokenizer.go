@@ -31,9 +31,18 @@ func New() Tokenizer {
 // will be returned by Run(). The patterns are matched by the order they
 // are defined in.
 func (t *Tokenizer) Pattern(pattern string, f func(Token) error) {
+	if pattern == "" {
+		t.setError(fmt.Errorf("empty pattern not allowed"))
+		return
+	}
+	if f == nil {
+		t.setError(fmt.Errorf("callback for pattern '%s' is nil", pattern))
+		return
+	}
+
 	mf, err := t.createMatcherFunc(pattern, "")
 	if err != nil {
-		t.err = err
+		t.setError(err)
 	}
 	t.matchFuncs = append(t.matchFuncs, mf)
 	t.callbacks = append(t.callbacks, f)
@@ -44,7 +53,7 @@ func (t *Tokenizer) Pattern(pattern string, f func(Token) error) {
 // The class cannot override any existing names.
 func (t *Tokenizer) ClassFunc(name string, check CheckerFunc) {
 	if _, err := t.getClass(name); err == nil {
-		t.err = fmt.Errorf("class '%s' already defined", name)
+		t.setError(fmt.Errorf("class '%s' already defined", name))
 		return
 	}
 
@@ -61,13 +70,19 @@ func (t *Tokenizer) ClassOptional(name string, patterns ...string) {
 // Class creates a new class that matches any of the given patterns.
 // The class cannot override any existing names.
 func (t *Tokenizer) Class(name string, patterns ...string) {
+	tokr := New()
+	if ok, _ := tokr.Matches(name, "{var}"); !ok {
+		t.setError(fmt.Errorf("invalid class name '%s'. class names can only contain letters and numbers", name))
+		return
+	}
+
 	if _, err := t.getClass(name); err == nil {
-		t.err = fmt.Errorf("class '%s' already defined", name)
+		t.setError(fmt.Errorf("class '%s' already defined", name))
 		return
 	}
 
 	if len(patterns) == 0 {
-		t.err = fmt.Errorf("ClassAny: you must provide at least one pattern")
+		t.setError(fmt.Errorf("ClassAny: you must provide at least one pattern"))
 	}
 
 	funcs := []matcherFunc{}
@@ -75,7 +90,7 @@ func (t *Tokenizer) Class(name string, patterns ...string) {
 	for _, pattern := range patterns {
 		mf, err := t.createMatcherFunc(pattern, "")
 		if err != nil {
-			t.err = err
+			t.setError(err)
 			return
 		}
 		funcs = append(funcs, mf)
@@ -125,6 +140,10 @@ func (t *Tokenizer) Run(s string) error {
 		return fmt.Errorf("gokenizer: %s", t.err.Error())
 	}
 
+	if len(t.callbacks) == 0 {
+		return nil
+	}
+
 	iter := stringiter.New(s)
 	for !iter.Eof() {
 		if err := t.matchNext(&iter); err != nil {
@@ -147,7 +166,7 @@ func (t *Tokenizer) Matches(s string, pattern string) (matched bool, err error) 
 	}
 
 	res := mf(&iter)
-	return res.matched, err
+	return res.matched && iter.Eof(), err
 }
 
 // Continue matching until one is found. Returns callbacks error.
@@ -339,4 +358,11 @@ func (t *Tokenizer) createMatcherFunc(pattern string, class string) (mf matcherF
 	}
 
 	return f, err
+}
+
+// Sets error if not nil
+func (t *Tokenizer) setError(err error) {
+	if t.err == nil {
+		t.err = err
+	}
 }
