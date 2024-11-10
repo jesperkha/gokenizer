@@ -432,3 +432,29 @@ func TestMatches(t *testing.T) {
 		t.Errorf("expected non-match")
 	}
 }
+
+func TestClassWithLength(t *testing.T) {
+	tokr := gokenizer.New()
+
+	if ok, err := tokr.Matches("hello", "{word:5}"); !ok || err != nil {
+		t.Error("expected match", err)
+	}
+	if ok, err := tokr.Matches("hellfofofo", "{word:5}"); ok && err == nil {
+		t.Error("expected non-match")
+	}
+
+	cases := []string{
+		"{}",
+		"{word:}",
+		"{word:-1}",
+		"{word:0}",
+		"{word:1:foo}",
+		"{:1}",
+	}
+
+	for idx, c := range cases {
+		if _, err := tokr.Matches("", c); err == nil {
+			t.Errorf("case_%d: expected error", idx+1)
+		}
+	}
+}

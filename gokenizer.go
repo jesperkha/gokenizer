@@ -2,6 +2,8 @@ package gokenizer
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/jesperkha/gokenizer/stringiter"
 )
@@ -11,6 +13,12 @@ type Tokenizer struct {
 	matchFuncs []matcherFunc
 	callbacks  []func(Token) error
 	classes    map[string]matcherFunc
+}
+
+type class struct {
+	name   string
+	length uint64
+	mf     matcherFunc
 }
 
 // Matches with the given string. The implementation is dynamically created
@@ -240,18 +248,49 @@ func literalMatcherFunc(s string) matcherFunc {
 	}
 }
 
-func parseClass(iter *stringiter.StringIter) (name string, err error) {
+func (t *Tokenizer) parseClass(iter *stringiter.StringIter) (c class, err error) {
 	if iter.Consume() != "{" {
-		return name, fmt.Errorf("expected { before class name")
+		return c, fmt.Errorf("expected { before class name")
 	}
 
 	if !iter.Seek('}') {
-		return name, fmt.Errorf("expected } after class name")
+		return c, fmt.Errorf("expected } after class name")
 	}
 
-	name = iter.Consume()
+	contents := iter.Consume()
 	iter.Consume() // }
-	return name, err
+
+	if splits := strings.Split(contents, ":"); len(splits) > 1 {
+		c.name = splits[0]
+		number, err := strconv.ParseUint(splits[1], 10, 64)
+		if len(splits) > 2 || err != nil {
+			return c, fmt.Errorf("invalid class format")
+		}
+		if number == 0 {
+			return c, fmt.Errorf("expected unsigned int above 0")
+		}
+		c.length = number
+	} else {
+		c.name = contents
+	}
+
+	c.mf, err = t.getClass(c.name)
+	if err != nil {
+		return c, err
+	}
+
+	if c.length != 0 {
+		f := c.mf
+		c.mf = func(iter *stringiter.StringIter) Token {
+			tok := f(iter)
+			if tok.Length != int(c.length) {
+				tok.matched = false
+			}
+			return tok
+		}
+	}
+
+	return c, err
 }
 
 // Returns two equal length lists of matcher functions and their class names.
@@ -262,18 +301,13 @@ func (t *Tokenizer) parsePattern(pattern string) (funcs []matcherFunc, className
 		if pIter.Peek() == '{' {
 			// Parse class name if we find a {
 			pIter.Restore()
-			className, err := parseClass(&pIter)
+			c, err := t.parseClass(&pIter)
 			if err != nil {
 				return funcs, classNames, err
 			}
 
-			f, err := t.getClass(className)
-			if err != nil {
-				return funcs, classNames, err
-			}
-
-			funcs = append(funcs, f)
-			classNames = append(classNames, className)
+			funcs = append(funcs, c.mf)
+			classNames = append(classNames, c.name)
 		} else if pIter.Seek('{') {
 			// Parse static word if there are characters before a {
 			staticWord := pIter.Consume()
